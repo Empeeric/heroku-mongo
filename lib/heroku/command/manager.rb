@@ -22,7 +22,8 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
   # -o, --org ORG         # name of org to transfer the application to
   #
   def transfer
-    org = extract_option("--org")
+    org = options[:org]
+    puts org
     host = DEFAULT_HOST
 
     if org == nil
