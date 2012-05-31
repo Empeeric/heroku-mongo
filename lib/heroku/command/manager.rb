@@ -23,7 +23,6 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
   #
   def transfer
     org = options[:org]
-    puts org
     host = DEFAULT_HOST
 
     if org == nil
