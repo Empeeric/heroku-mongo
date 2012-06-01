@@ -1,7 +1,7 @@
 Heroku CLI plugin for developing apps in organization accounts. Install with
 
-    $ heroku plugins:install git@github.com:heroku/heroku-manager-cli.git
-    heroku-manager-cli installed
+    $ heroku plugins:install https://github.com/heroku/manager-cli.git
+    manager-cli installed
 
 See which orgs you are a member of:
 
@@ -34,5 +34,5 @@ Check the app after the transfer:
     Stack:         cedar
     Web URL:       http://hollow-warrior-3022.herokuapp.com/
 
-You'll see that you are now a collaborator (soon to be 'developer') on the app. So you can continue to work on the app but it is now owned by the organization.
+You'll see that you are now a collaborator on the app. While this output doesn't show it, your collaborator status is different. You have full access to the application and can perform actions such as scaling and provisioning addons.
 
