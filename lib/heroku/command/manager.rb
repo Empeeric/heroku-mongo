@@ -47,9 +47,9 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
   #
   def orgs
     host = DEFAULT_HOST
-    puts "You are a member of the following organizations (only IDs available):"
-    puts JSON.parse(RestClient.get("https://:#{api_key}@#{host}/api/v1/user-info/organization")).map { |l|
-      File.basename(l["ref"])
+    puts "You are a member of the following organizations:"
+    puts JSON.parse(RestClient.get("https://:#{api_key}@#{host}/api/v1/user-info"))["organizations"].collect { |o|
+        "    #{o["organization_name"]}"
     }
   end
 
