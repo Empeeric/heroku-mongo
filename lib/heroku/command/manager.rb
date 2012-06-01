@@ -5,7 +5,7 @@ require 'json'
 # deploy to an app
 #
 class Heroku::Command::Manager < Heroku::Command::BaseWithApp
-  DEFAULT_HOST = "yotogi.herokuapp.com"
+  DEFAULT_HOST = "manager-api.heroku.com"
 
   # transfer
   #
