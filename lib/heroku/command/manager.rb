@@ -36,7 +36,7 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
     end
 
     print_and_flush("Transferring #{app} to #{org}...")
-    RestClient.post("https://:#{api_key}@#{host}/api/v1/organization/#{org}/app", { :app_name => app }.to_json, :content_type => :json)
+    RestClient.post("https://:#{api_key}@#{host}/v1/organization/#{org}/app", { :app_name => app }.to_json, :content_type => :json)
 
     print_and_flush("done\n")
   end
@@ -48,7 +48,7 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
   def orgs
     host = DEFAULT_HOST
     puts "You are a member of the following organizations:"
-    puts JSON.parse(RestClient.get("https://:#{api_key}@#{host}/api/v1/user-info"))["organizations"].collect { |o|
+    puts JSON.parse(RestClient.get("https://:#{api_key}@#{host}/v1/user-info"))["organizations"].collect { |o|
         "    #{o["organization_name"]}"
     }
   end
