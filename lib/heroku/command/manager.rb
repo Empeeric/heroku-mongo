@@ -5,28 +5,33 @@ require 'json'
 # deploy to an app
 #
 class Heroku::Command::Manager < Heroku::Command::BaseWithApp
-  DEFAULT_HOST = "manager-api.heroku.com"
+  MANAGER_HOST = ENV['MANAGER_HOST'] || "manager-api.heroku.com"
 
   # transfer
   #
   # transfer an app to an organization account
   #
   def index
-    display "Usage: heroku manager:transfer --org ORG_NAME [--app APP_NAME]"
+    display "Usage: heroku manager:transfer (--to|--from) ORG_NAME [--app APP_NAME]"
   end
 
-  # manager:transfer
+  # manager:transfer (--to|--from) ORG_NAME [--app APP_NAME]
   #
-  # transfer an app to an organization account
+  # transfer an app to or from an organization account
   #
-  # -o, --org ORG         # name of org to transfer the application to
+  # -t, --to ORG         # Transfer application from personal account to this org
+  # -f, --from ORG       # Transfer application from this org to personal account
   #
   def transfer
-    org = options[:org]
-    host = DEFAULT_HOST
+    to = options[:to]
+    from = options[:from]
 
-    if org == nil
-      raise Heroku::Command::CommandFailed, "No organization specified.\nSpecify which organization to transfer to with --org <org name>"
+    if to == nil && from == nil
+      raise Heroku::Command::CommandFailed, "No organization specified.\nSpecify which organization to transfer to or from with --to <org name> or --from <org name>"
+    end
+
+    if to != nil && from != nil
+      raise Heroku::Command::CommandFailed, "Ambiguous option. Please specify either a --to <org name> or a --from <org name>. Not both."
     end
 
     begin
@@ -35,10 +40,23 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
       raise Heroku::Command::CommandFailed, "You do not have access to the app '#{app}'"
     end
 
-    print_and_flush("Transferring #{app} to #{org}...")
-    RestClient.post("https://:#{api_key}@#{host}/v1/organization/#{org}/app", { :app_name => app }.to_json, :content_type => :json)
-
-    print_and_flush("done\n")
+    if to != nil
+      print_and_flush("Transferring #{app} to #{to}...")
+      response = RestClient.post("https://:#{api_key}@#{MANAGER_HOST}/v1/organization/#{to}/app", { :app_name => app }.to_json, :content_type => :json)
+      if response.code == 201
+        print_and_flush("done\n")
+      else
+        print_and_flush("failed\nAn error occurred: #{response.code}\n#{response}")      
+      end
+    else
+      print_and_flush("Transferring #{app} from #{from} to your personal account...")
+      response = RestClient.post("https://:#{api_key}@#{MANAGER_HOST}/v1/organization/#{from}/app/#{app}/transfer-out", "")
+      if response.code == 200
+        print_and_flush("done\n")
+      else
+        print_and_flush("failed\nAn error occurred: #{response.code}\n#{response}")      
+      end
+    end
   end
 
   # manager:orgs
@@ -46,9 +64,8 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
   # list organization accounts that you have access to
   #
   def orgs
-    host = DEFAULT_HOST
     puts "You are a member of the following organizations:"
-    puts JSON.parse(RestClient.get("https://:#{api_key}@#{host}/v1/user-info"))["organizations"].collect { |o|
+    puts JSON.parse(RestClient.get("https://:#{api_key}@#{MANAGER_HOST}/v1/user-info"))["organizations"].collect { |o|
         "    #{o["organization_name"]}"
     }
   end
