@@ -2,7 +2,7 @@ require 'heroku/command/base'
 require 'rest_client'
 require 'json'
 
-# deploy to an app
+# manage apps in organization accounts
 #
 class Heroku::Command::Manager < Heroku::Command::BaseWithApp
   MANAGER_HOST = ENV['MANAGER_HOST'] || "manager-api.heroku.com"
