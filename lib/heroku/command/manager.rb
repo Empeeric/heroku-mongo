@@ -1,6 +1,5 @@
 require 'heroku/command/base'
 require 'rest_client'
-require 'json'
 
 # manage apps in organization accounts
 #
@@ -65,7 +64,7 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
   #
   def orgs
     puts "You are a member of the following organizations:"
-    puts JSON.parse(RestClient.get("https://:#{api_key}@#{MANAGER_HOST}/v1/user-info"))["organizations"].collect { |o|
+    puts json_decode(RestClient.get("https://:#{api_key}@#{MANAGER_HOST}/v1/user-info"))["organizations"].collect { |o|
         "    #{o["organization_name"]}"
     }
   end
