@@ -43,7 +43,7 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
       print_and_flush("Transferring #{app} to #{to}...")
       response = RestClient.post("https://:#{api_key}@#{MANAGER_HOST}/v1/organization/#{to}/app", json_encode({ "app_name" => app }), :content_type => :json)
       if response.code == 201
-        print_and_flush("done\n")
+        print_and_flush(" done\n")
       else
         print_and_flush("failed\nAn error occurred: #{response.code}\n#{response}")      
       end
@@ -51,7 +51,7 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
       print_and_flush("Transferring #{app} from #{from} to your personal account...")
       response = RestClient.post("https://:#{api_key}@#{MANAGER_HOST}/v1/organization/#{from}/app/#{app}/transfer-out", "")
       if response.code == 200
-        print_and_flush("done\n")
+        print_and_flush(" done\n")
       else
         print_and_flush("failed\nAn error occurred: #{response.code}\n#{response}")      
       end
