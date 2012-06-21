@@ -41,7 +41,7 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
 
     if to != nil
       print_and_flush("Transferring #{app} to #{to}...")
-      response = RestClient.post("https://:#{api_key}@#{MANAGER_HOST}/v1/organization/#{to}/app", { :app_name => app }.to_json, :content_type => :json)
+      response = RestClient.post("https://:#{api_key}@#{MANAGER_HOST}/v1/organization/#{to}/app", json_encode({ "app_name" => app }), :content_type => :json)
       if response.code == 201
         print_and_flush("done\n")
       else
