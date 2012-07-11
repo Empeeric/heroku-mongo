@@ -13,6 +13,11 @@ See which orgs you are a member of:
         org-name-4
 
 Transfer an app to an org:
+
+    $ heroku manager:transfer --app APP_NAME --org ORG_NAME
+
+*Example:*
+
     $ heroku manager:transfer --app hollow-warrior-3022 --to org-name-1
     Transferring hollow-warrior-3022 to org-name-1...done
 
