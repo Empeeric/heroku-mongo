@@ -14,7 +14,7 @@ See which orgs you are a member of:
 
 Transfer an app to an org:
 
-    $ heroku manager:transfer --app APP_NAME --org ORG_NAME
+    $ heroku manager:transfer --app APP_NAME --to ORG_NAME
 
 *Example:*
 
