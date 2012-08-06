@@ -32,11 +32,11 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
     to = options[:to]
     from = options[:from]
 
-    if to == nil && from == nil
+    if to.nil? && from.nil?
       raise Heroku::Command::CommandFailed, "No organization specified.\nSpecify which organization to transfer to or from with --to <org name> or --from <org name>"
     end
 
-    if to != nil && from != nil
+    if to && from
       raise Heroku::Command::CommandFailed, "Ambiguous option. Please specify either a --to <org name> or a --from <org name>. Not both."
     end
 
@@ -47,7 +47,7 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
     end
 
     begin
-      if to != nil
+      if to
         print_and_flush("Transferring #{app} to #{to}...")
         response = RestClient.post("https://:#{api_key}@#{MANAGER_HOST}/v1/organization/#{to}/app", json_encode({ "app_name" => app }), :content_type => :json)
         if response.code == 201
@@ -65,7 +65,7 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
         end
       end
     rescue => e
-      rint_and_flush("failed\nAn error occurred: #{e.message}\n")
+      print_and_flush("failed\nAn error occurred: #{e.message}\n")
     end
   end
 
@@ -80,11 +80,11 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
     team = options[:team]
     org = options[:org]
 
-    if team == nil
+    if team.nil?
       raise Heroku::Command::CommandFailed, "No team specified.\nSpecify which team to transfer from with --team <team name>\n"
     end
 
-    if org == nil
+    if org.nil?
       raise Heroku::Command::CommandFailed, "No organization specified.\nSpecify which organization to transfer to with --org <org name>\n"
     end
 
@@ -114,11 +114,11 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
     team = options[:team]
     org = options[:org]
 
-    if team == nil
+    if team.nil?
       raise Heroku::Command::CommandFailed, "No team specified.\nSpecify which team to transfer to with --team <team name>\n"
     end
 
-    if org == nil
+    if org.nil?
       raise Heroku::Command::CommandFailed, "No organization specified.\nSpecify which organization to transfer from with --org <org name>\n"
     end
 
@@ -151,11 +151,11 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
     org = options[:org]
     role = options[:role]
 
-    if user == nil
+    if user.nil?
       raise Heroku::Command::CommandFailed, "No user specified.\nSpecify which user to add with --user <user email>\n"
     end
 
-    if org == nil
+    if org.nil?
       raise Heroku::Command::CommandFailed, "No organization specified.\nSpecify which organization to add the user to with --org <org name>\n"
     end
 
@@ -174,7 +174,7 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
         print_and_flush("failed\nAn error occurred: #{response.code}\n#{response}\n")
       end
     rescue => e
-      if e.response != nil && e.response.code == 302
+      if e.response && e.response.code == 302
         print_and_flush("failed\n#{user} is already a member of #{org}\n")
       else
         print_and_flush("failed\nAn error occurred: #{e.message}\n")
