@@ -65,7 +65,12 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
         end
       end
     rescue => e
-      print_and_flush("failed\nAn error occurred: #{e.message}\n")
+      if e.response
+        errorText = json_decode(e.response.body)
+        print_and_flush("failed\nAn error occurred: #{errorText["error_message"]}\n")
+      else
+        print_and_flush("failed\nAn error occurred: #{e.message}\n")
+      end
     end
   end
 
@@ -99,7 +104,12 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
         print_and_flush("failed\nAn error occurred: #{response.code}\n#{response}\n")
       end
     rescue => e
-      print_and_flush("failed\nAn error occurred: #{e.message}\n")
+      if e.response
+        errorText = json_decode(e.response.body)
+        print_and_flush("failed\nAn error occurred: #{errorText["error_message"]}\n")
+      else
+        print_and_flush("failed\nAn error occurred: #{e.message}\n")
+      end
     end
   end
 
@@ -133,7 +143,12 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
         print_and_flush("failed\nAn error occurred: #{response.code}\n#{response}\n")
       end
     rescue => e
-      print_and_flush("failed\nAn error occurred: #{e.message}\n")
+      if e.response
+        errorText = json_decode(e.response.body)
+        print_and_flush("failed\nAn error occurred: #{errorText["error_message"]}\n")
+      else
+        print_and_flush("failed\nAn error occurred: #{e.message}\n")
+      end
     end
 
   end
@@ -176,6 +191,9 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
     rescue => e
       if e.response && e.response.code == 302
         print_and_flush("failed\n#{user} is already a member of #{org}\n")
+      elsif e.response
+        errorText = json_decode(e.response.body)
+        print_and_flush("failed\nAn error occurred: #{errorText["error_message"]}\n")
       else
         print_and_flush("failed\nAn error occurred: #{e.message}\n")
       end
@@ -203,7 +221,12 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
         "    #{u["email"]}"
       }
     rescue => e
-      print_and_flush("failed\nAn error occurred: #{e.message}\n")
+      if e.response
+        errorText = json_decode(e.response.body)
+        print_and_flush("An error occurred: #{errorText["error_message"]}\n")
+      else
+        print_and_flush("An error occurred: #{e.message}\n")
+      end
     end
   end
 
@@ -221,7 +244,12 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
         "    #{a["name"]}"
       }
     rescue => e
-      print_and_flush("failed\nAn error occurred: #{e.message}\n")
+      if e.response
+        errorText = json_decode(e.response.body)
+        print_and_flush("An error occurred: #{errorText["error_message"]}\n")
+      else
+        print_and_flush("An error occurred: #{e.message}\n")
+      end
     end
   end
 
@@ -236,7 +264,12 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
           "    #{o["organization_name"]}"
       }
     rescue => e
-      print_and_flush("failed\nAn error occurred: #{e.message}\n")
+      if e.response
+        errorText = json_decode(e.response.body)
+        print_and_flush("An error occurred: #{errorText["error_message"]}\n")
+      else
+        print_and_flush("An error occurred: #{e.message}\n")
+      end
     end
   end
 
