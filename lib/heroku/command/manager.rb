@@ -201,6 +201,53 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
 
   end
 
+
+  # manager:add_contributor_to_app --org ORG_NAME --user USER_EMAIL [--app APP_NAME]
+  #
+  # add a user to your organization
+  #
+  # -u, --user USER_EMAIL     # User to add
+  # -o, --org ORG       # org the app is in
+  #
+  def add_user
+    user = options[:user]
+    org = options[:org]
+
+    if user.nil?
+      raise Heroku::Command::CommandFailed, "No user specified.\nSpecify which user to add with --user <user email>\n"
+    end
+
+    if org.nil?
+      raise Heroku::Command::CommandFailed, "No organization specified.\nSpecify which organization the app is in with --org <org name>\n"
+    end
+
+    if app.nil?
+      raise Heroku::Command::CommandFailed, "No app specified.\n"
+    end
+
+    print_and_flush("Adding #{user} to #{app}...")
+
+    begin
+      response = RestClient.post("https://:#{api_key}@#{MANAGER_HOST}/v1/organization/#{org}/app/#{app}/developer", json_encode({ "email" => user }), :content_type => :json)
+
+      if response.code == 201
+        print_and_flush(" done\n")
+      else
+        print_and_flush("failed\nAn error occurred: #{response.code}\n#{response}\n")
+      end
+    rescue => e
+      if e.response && e.response.code == 302
+        print_and_flush("failed\n#{user} already has access to #{app}\n")
+      elsif e.response
+        errorText = json_decode(e.response.body)
+        print_and_flush("failed\nAn error occurred: #{errorText["error_message"]}\n")
+      else
+        print_and_flush("failed\nAn error occurred: #{e.message}\n")
+      end
+    end
+
+  end
+
   # manager:users --org ORG_NAME
   #
   # list users in the specified org
