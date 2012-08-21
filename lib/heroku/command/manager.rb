@@ -55,7 +55,7 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
         if response.code == 201
           print_and_flush(" done\n")
         else
-          print_and_flush("failed\nAn error occurred: #{response.code}\n#{response}")
+          print_and_flush(" failed\nAn error occurred: #{response.code}\n#{response}")
         end
       else
         print_and_flush("Transferring #{app} from #{from} to your personal account...")
@@ -63,15 +63,15 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
         if response.code == 200
           print_and_flush(" done\n")
         else
-          print_and_flush("failed\nAn error occurred: #{response.code}\n#{response}")
+          print_and_flush(" failed\nAn error occurred: #{response.code}\n#{response}")
         end
       end
     rescue => e
       if e.response
         errorText = json_decode(e.response.body)
-        print_and_flush("failed\nAn error occurred: #{errorText["error_message"]}\n")
+        print_and_flush(" failed\nAn error occurred: #{errorText["error_message"]}\n")
       else
-        print_and_flush("failed\nAn error occurred: #{e.message}\n")
+        print_and_flush(" failed\nAn error occurred: #{e.message}\n")
       end
     end
   end
@@ -103,14 +103,14 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
       if response.code == 200
         print_and_flush(" done\n")
       else
-        print_and_flush("failed\nAn error occurred: #{response.code}\n#{response}\n")
+        print_and_flush(" failed\nAn error occurred: #{response.code}\n#{response}\n")
       end
     rescue => e
       if e.response
         errorText = json_decode(e.response.body)
-        print_and_flush("failed\nAn error occurred: #{errorText["error_message"]}\n")
+        print_and_flush(" failed\nAn error occurred: #{errorText["error_message"]}\n")
       else
-        print_and_flush("failed\nAn error occurred: #{e.message}\n")
+        print_and_flush(" failed\nAn error occurred: #{e.message}\n")
       end
     end
   end
@@ -142,14 +142,14 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
       if response.code == 200
         print_and_flush(" done\n")
       else
-        print_and_flush("failed\nAn error occurred: #{response.code}\n#{response}\n")
+        print_and_flush(" failed\nAn error occurred: #{response.code}\n#{response}\n")
       end
     rescue => e
       if e.response
         errorText = json_decode(e.response.body)
-        print_and_flush("failed\nAn error occurred: #{errorText["error_message"]}\n")
+        print_and_flush(" failed\nAn error occurred: #{errorText["error_message"]}\n")
       else
-        print_and_flush("failed\nAn error occurred: #{e.message}\n")
+        print_and_flush(" failed\nAn error occurred: #{e.message}\n")
       end
     end
 
@@ -188,16 +188,16 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
       if response.code == 201
         print_and_flush(" done\n")
       else
-        print_and_flush("failed\nAn error occurred: #{response.code}\n#{response}\n")
+        print_and_flush(" failed\nAn error occurred: #{response.code}\n#{response}\n")
       end
     rescue => e
       if e.response && e.response.code == 302
-        print_and_flush("failed\n#{user} is already a member of #{org}\n")
+        print_and_flush(" failed\n#{user} is already a member of #{org}\n")
       elsif e.response
         errorText = json_decode(e.response.body)
-        print_and_flush("failed\nAn error occurred: #{errorText["error_message"]}\n")
+        print_and_flush(" failed\nAn error occurred: #{errorText["error_message"]}\n")
       else
-        print_and_flush("failed\nAn error occurred: #{e.message}\n")
+        print_and_flush(" failed\nAn error occurred: #{e.message}\n")
       end
     end
 
@@ -235,14 +235,14 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
       if response.code == 201
         print_and_flush(" done\n")
       else
-        print_and_flush("failed\nAn error occurred: #{response.code}\n#{response}\n")
+        print_and_flush(" failed\nAn error occurred: #{response.code}\n#{response}\n")
       end
     rescue => e
       if e.response
         errorText = json_decode(e.response.body)
-        print_and_flush("failed\nAn error occurred: #{errorText["error_message"]}\n")
+        print_and_flush(" failed\nAn error occurred: #{errorText["error_message"]}\n")
       else
-        print_and_flush("failed\nAn error occurred: #{e.message}\n")
+        print_and_flush(" failed\nAn error occurred: #{e.message}\n")
       end
     end
 
