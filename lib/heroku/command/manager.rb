@@ -50,28 +50,28 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
 
     begin
       if to
-        print_and_flush("Transferring #{app} to #{to}...")
+        print_and_flush("Transferring #{app} to #{to}... ")
         response = RestClient.post("https://:#{api_key}@#{MANAGER_HOST}/v1/organization/#{to}/app", json_encode({ "app_name" => app }), :content_type => :json)
         if response.code == 201
           print_and_flush(" done\n")
         else
-          print_and_flush(" failed\nAn error occurred: #{response.code}\n#{response}")
+          print_and_flush("failed\nAn error occurred: #{response.code}\n#{response}")
         end
       else
-        print_and_flush("Transferring #{app} from #{from} to your personal account...")
+        print_and_flush("Transferring #{app} from #{from} to your personal account... ")
         response = RestClient.post("https://:#{api_key}@#{MANAGER_HOST}/v1/organization/#{from}/app/#{app}/transfer-out", "")
         if response.code == 200
           print_and_flush(" done\n")
         else
-          print_and_flush(" failed\nAn error occurred: #{response.code}\n#{response}")
+          print_and_flush("failed\nAn error occurred: #{response.code}\n#{response}")
         end
       end
     rescue => e
       if e.response
         errorText = json_decode(e.response.body)
-        print_and_flush(" failed\nAn error occurred: #{errorText["error_message"]}\n")
+        print_and_flush("failed\nAn error occurred: #{errorText["error_message"]}\n")
       else
-        print_and_flush(" failed\nAn error occurred: #{e.message}\n")
+        print_and_flush("failed\nAn error occurred: #{e.message}\n")
       end
     end
   end
@@ -95,7 +95,7 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
       raise Heroku::Command::CommandFailed, "No organization specified.\nSpecify which organization to transfer to with --org <org name>\n"
     end
 
-    print_and_flush("Transferring apps from #{team} to #{org}...")
+    print_and_flush("Transferring apps from #{team} to #{org}... ")
 
     begin
       response = RestClient.post("https://:#{api_key}@#{MANAGER_HOST}/v1/organization/#{org}/migrate-from-team", json_encode({ "team" => team }), :content_type => :json)
@@ -103,14 +103,14 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
       if response.code == 200
         print_and_flush(" done\n")
       else
-        print_and_flush(" failed\nAn error occurred: #{response.code}\n#{response}\n")
+        print_and_flush("failed\nAn error occurred: #{response.code}\n#{response}\n")
       end
     rescue => e
       if e.response
         errorText = json_decode(e.response.body)
-        print_and_flush(" failed\nAn error occurred: #{errorText["error_message"]}\n")
+        print_and_flush("failed\nAn error occurred: #{errorText["error_message"]}\n")
       else
-        print_and_flush(" failed\nAn error occurred: #{e.message}\n")
+        print_and_flush("failed\nAn error occurred: #{e.message}\n")
       end
     end
   end
@@ -134,7 +134,7 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
       raise Heroku::Command::CommandFailed, "No organization specified.\nSpecify which organization to transfer from with --org <org name>\n"
     end
 
-    print_and_flush("Transferring apps from #{org} to #{team}...")
+    print_and_flush("Transferring apps from #{org} to #{team}... ")
 
     begin
       response = RestClient.post("https://:#{api_key}@#{MANAGER_HOST}/v1/organization/#{org}/migrate-to-team", json_encode({ "team" => team }), :content_type => :json)
@@ -142,14 +142,14 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
       if response.code == 200
         print_and_flush(" done\n")
       else
-        print_and_flush(" failed\nAn error occurred: #{response.code}\n#{response}\n")
+        print_and_flush("failed\nAn error occurred: #{response.code}\n#{response}\n")
       end
     rescue => e
       if e.response
         errorText = json_decode(e.response.body)
-        print_and_flush(" failed\nAn error occurred: #{errorText["error_message"]}\n")
+        print_and_flush("failed\nAn error occurred: #{errorText["error_message"]}\n")
       else
-        print_and_flush(" failed\nAn error occurred: #{e.message}\n")
+        print_and_flush("failed\nAn error occurred: #{e.message}\n")
       end
     end
 
@@ -180,7 +180,7 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
       raise Heroku::Command::CommandFailed, "Invalid role.\nSpecify which role the user will have with --role <role>\nValid values are 'manager' and 'contributor'\n"
     end
 
-    print_and_flush("Adding #{user} to #{org}...")
+    print_and_flush("Adding #{user} to #{org}... ")
 
     begin
       response = RestClient.post("https://:#{api_key}@#{MANAGER_HOST}/v1/organization/#{org}/user", json_encode({ "email" => user, "role" => role }), :content_type => :json)
@@ -188,16 +188,16 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
       if response.code == 201
         print_and_flush(" done\n")
       else
-        print_and_flush(" failed\nAn error occurred: #{response.code}\n#{response}\n")
+        print_and_flush("failed\nAn error occurred: #{response.code}\n#{response}\n")
       end
     rescue => e
       if e.response && e.response.code == 302
-        print_and_flush(" failed\n#{user} is already a member of #{org}\n")
+        print_and_flush("failed\n#{user} is already a member of #{org}\n")
       elsif e.response
         errorText = json_decode(e.response.body)
-        print_and_flush(" failed\nAn error occurred: #{errorText["error_message"]}\n")
+        print_and_flush("failed\nAn error occurred: #{errorText["error_message"]}\n")
       else
-        print_and_flush(" failed\nAn error occurred: #{e.message}\n")
+        print_and_flush("failed\nAn error occurred: #{e.message}\n")
       end
     end
 
@@ -227,7 +227,7 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
       raise Heroku::Command::CommandFailed, "No app specified.\n"
     end
 
-    print_and_flush("Adding #{user} to #{app}...")
+    print_and_flush("Adding #{user} to #{app}... ")
 
     begin
       response = RestClient.post("https://:#{api_key}@#{MANAGER_HOST}/v1/organization/#{org}/app/#{app}/developer", json_encode({ "email" => user }), :content_type => :json)
@@ -235,14 +235,14 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
       if response.code == 201
         print_and_flush(" done\n")
       else
-        print_and_flush(" failed\nAn error occurred: #{response.code}\n#{response}\n")
+        print_and_flush("failed\nAn error occurred: #{response.code}\n#{response}\n")
       end
     rescue => e
       if e.response
         errorText = json_decode(e.response.body)
-        print_and_flush(" failed\nAn error occurred: #{errorText["error_message"]}\n")
+        print_and_flush("failed\nAn error occurred: #{errorText["error_message"]}\n")
       else
-        print_and_flush(" failed\nAn error occurred: #{e.message}\n")
+        print_and_flush("failed\nAn error occurred: #{e.message}\n")
       end
     end
 
