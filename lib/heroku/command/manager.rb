@@ -176,8 +176,8 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
       raise Heroku::Command::CommandFailed, "No organization specified.\nSpecify which organization to add the user to with --org <org name>\n"
     end
 
-    if role != 'manager' && role != 'contributor'
-      raise Heroku::Command::CommandFailed, "Invalid role.\nSpecify which role the user will have with --role <role>\nValid values are 'manager' and 'contributor'\n"
+    if role != 'admin' && role != 'member'
+      raise Heroku::Command::CommandFailed, "Invalid role.\nSpecify which role the user will have with --role <role>\nValid values are 'admin' and 'member'\n"
     end
 
     print_and_flush("Adding #{user} to #{org}... ")
@@ -192,7 +192,7 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
       end
     rescue => e
       if e.response && e.response.code == 302
-        print_and_flush("failed\n#{user} is already a member of #{org}\n")
+        print_and_flush("failed\n#{user} already belongs to #{org}\n")
       elsif e.response
         errorText = json_decode(e.response.body)
         print_and_flush("failed\nAn error occurred: #{errorText["error_message"]}\n")
