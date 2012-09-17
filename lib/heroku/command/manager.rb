@@ -160,7 +160,7 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
   # add a user to your organization
   #
   # -u, --user USER_EMAIL     # User to add
-  # -t, --role ROLE     # Role the user will have (manager or contributor)
+  # -r, --role ROLE     # Role the user will have (manager or contributor)
   # -o, --org ORG       # Add user to this org
   #
   def add_user
