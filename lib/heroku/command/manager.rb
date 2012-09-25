@@ -35,7 +35,7 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
     from = options[:from]
 
     if to.nil? && from.nil?
-      raise Heroku::Command::CommandFailed, "No organization specified.\nSpecify which organization to transfer to or from with --to <org name> or --from <org name>"
+      raise Heroku::Command::CommandFailed, "No organization specified.\nSpecify which organization to transfer to or from with --to <org name> or --from <org name>."
     end
 
     if to && from
@@ -45,7 +45,7 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
     begin
       heroku.get("/apps/#{app}")
     rescue RestClient::ResourceNotFound => e
-      raise Heroku::Command::CommandFailed, "You do not have access to the app '#{app}'"
+      raise Heroku::Command::CommandFailed, "You do not have access to the app '#{app}'."
     end
 
     begin
@@ -88,11 +88,11 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
     org = options[:org]
 
     if team.nil?
-      raise Heroku::Command::CommandFailed, "No team specified.\nSpecify which team to transfer from with --team <team name>\n"
+      raise Heroku::Command::CommandFailed, "No team specified.\nSpecify which team to transfer from with --team <team name>.\n"
     end
 
     if org.nil?
-      raise Heroku::Command::CommandFailed, "No organization specified.\nSpecify which organization to transfer to with --org <org name>\n"
+      raise Heroku::Command::CommandFailed, "No organization specified.\nSpecify which organization to transfer to with --org <org name>.\n"
     end
 
     print_and_flush("Transferring apps from #{team} to #{org}... ")
@@ -127,11 +127,11 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
     org = options[:org]
 
     if team.nil?
-      raise Heroku::Command::CommandFailed, "No team specified.\nSpecify which team to transfer to with --team <team name>\n"
+      raise Heroku::Command::CommandFailed, "No team specified.\nSpecify which team to transfer to with --team <team name>.\n"
     end
 
     if org.nil?
-      raise Heroku::Command::CommandFailed, "No organization specified.\nSpecify which organization to transfer from with --org <org name>\n"
+      raise Heroku::Command::CommandFailed, "No organization specified.\nSpecify which organization to transfer from with --org <org name>.\n"
     end
 
     print_and_flush("Transferring apps from #{org} to #{team}... ")
@@ -169,15 +169,15 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
     role = options[:role]
 
     if user.nil?
-      raise Heroku::Command::CommandFailed, "No user specified.\nSpecify which user to add with --user <user email>\n"
+      raise Heroku::Command::CommandFailed, "No user specified.\nSpecify which user to add with --user <user email>.\n"
     end
 
     if org.nil?
-      raise Heroku::Command::CommandFailed, "No organization specified.\nSpecify which organization to add the user to with --org <org name>\n"
+      raise Heroku::Command::CommandFailed, "No organization specified.\nSpecify which organization to add the user to with --org <org name>.\n"
     end
 
     if role != 'admin' && role != 'member'
-      raise Heroku::Command::CommandFailed, "Invalid role.\nSpecify which role the user will have with --role <role>\nValid values are 'admin' and 'member'\n"
+      raise Heroku::Command::CommandFailed, "Invalid role.\nSpecify which role the user will have with --role <role>\nValid values are 'admin' and 'member'.\n"
     end
 
     print_and_flush("Adding #{user} to #{org}... ")
@@ -216,11 +216,11 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
     org = options[:org]
 
     if user.nil?
-      raise Heroku::Command::CommandFailed, "No user specified.\nSpecify which user to add with --user <user email>\n"
+      raise Heroku::Command::CommandFailed, "No user specified.\nSpecify which user to add with --user <user email>.\n"
     end
 
     if org.nil?
-      raise Heroku::Command::CommandFailed, "No organization specified.\nSpecify which organization the app is in with --org <org name>\n"
+      raise Heroku::Command::CommandFailed, "No organization specified.\nSpecify which organization the app is in with --org <org name>.\n"
     end
 
     if app.nil?
