@@ -259,12 +259,12 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
     puts "The following users are members of #{org}:"
     begin
       user_list = json_decode(RestClient.get("https://:#{api_key}@#{MANAGER_HOST}/v1/organization/#{org}/user"))
-      puts "Managers:"
-      puts user_list.select{ |u| u["role"] == "manager"}.collect { |u|
+      puts "Administrators:"
+      puts user_list.select{ |u| u["role"] == "admin"}.collect { |u|
           "    #{u["email"]}"
       }
-      puts "\nContributors:"
-      puts user_list.select{ |u| u["role"] == "contributor"}.collect { |u|
+      puts "\nMembers:"
+      puts user_list.select{ |u| u["role"] == "member"}.collect { |u|
         "    #{u["email"]}"
       }
     rescue => e
