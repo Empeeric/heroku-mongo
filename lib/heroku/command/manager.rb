@@ -65,7 +65,10 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
         end
       end
     rescue => e
-      if e.response
+
+      if e.response && e.response.code == 302
+         print_and_flush("App #{app} already in organization #{to}\n")
+      elsif e.response
         errorText = json_decode(e.response.body)
         print_and_flush("failed\nAn error occurred: #{errorText["error_message"]}\n")
       else
