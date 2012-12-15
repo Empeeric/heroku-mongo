@@ -309,6 +309,107 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
     end
   end
 
+  # manager:events --org ORG_NAME [--app APP_NAME]
+  #
+  # list audit events for an org
+  #
+  # -o, --org ORG        # Org to list events for
+  #
+  def events
+    org = options[:org]
+    app_name = options[:app]
+
+    if org == nil
+      raise Heroku::Command::CommandFailed, "No organization specified. Use the -o --org option to specify an organization."
+    end
+    begin
+      if app_name == nil
+        path = "/v1/organization/#{org}/events"
+      else
+        path = "/v1/organization/#{org}/app/#{app_name}/events" 
+      end
+      
+        go = true
+
+        while(go) 
+          resp = json_decode(RestClient.get("https://:#{api_key}@#{MANAGER_HOST}#{path}"))
+
+          resp["events"].each { |r|
+            print_and_flush "#{Time.at(r["time_in_millis_since_epoch"]/1000)} #{r["actor"]} #{r["action"]} #{r["app"]} #{json_encode(r["attributes"])}\n"
+          }
+
+          go = resp.has_key?("older") 
+          if go && confirm("Fetch More Results? (y/n)")
+             path = resp["older"]   
+          else 
+              go = false 
+          end
+      end 
+
+    rescue => e
+      print_and_flush("An error occurred: #{e}\n")
+    end
+
+  end
+
+  # usage --org ORG
+  #
+  #   shows last month's usage for an org
+  #
+  # -o, --org ORG        # Org to list events for
+  # -s, --sort FIELD     # sort by FIELD, one of 'dyno' or 'addon'
+  #
+  def usage
+    org = options[:org]
+
+    apps = {}
+    json_decode(RestClient.get("https://:#{api_key}@#{MANAGER_HOST}/v1/organization/#{org}/app")).each { |a|
+      apps[a["id"]] = a
+    }
+    longest_name = apps.values.map { |x| x["name"] }.max { |a,b| a.length <=> b.length }.length
+
+    res = []
+    total_dyno = 0
+    total_addon = 0
+    puts "https://:#{api_key}@#{MANAGER_HOST}/v1/organization/#{org}/usage/monthly/#{Time.now.to_i*1000}/1"
+    usage = json_decode(RestClient.get("https://:#{api_key}@#{MANAGER_HOST}/v1/organization/#{org}/usage/monthly/#{Time.now.to_i*1000}/1"))
+    latest_month = usage.map { |x| x["time"] }.max
+
+    usage.select { |x| x["time"] == latest_month }.group_by { |x| x["resource_id"] }.each { |k,v|
+      d = v.select { |x| x["product_group"] == 'dyno' }.map { |x| x["quantity"] }.inject(:+) || 0
+      a = v.select { |x| x["product_group"] == 'addon' }.map { |x| x["quantity"]*x["rate"] }.inject(:+) || 0
+      res << [ (apps[k] || {"name" => "deleted"})["name"], d, a]
+      total_dyno += d
+      total_addon += a
+
+    }
+
+    if options[:sort] == 'dyno'
+      res.sort! { |a,b| a[1] <=> b[1] }
+    elsif options[:sort] == 'addon'
+      res.sort! { |a,b| a[2] <=> b[2] }
+    end
+
+    printf("%-#{longest_name}s       %4d-%02d\n", "", Time.at(latest_month/1000).year, Time.at(latest_month/1000).utc.month)
+    printf("%-#{longest_name}s  %8s--%7s\n", "", '-'*8, '-'*7)
+    printf("%-#{longest_name}s  %8s  %7s\n", "App name", "Dyno hrs", "Addon $")
+    printf("%-#{longest_name}s  %8s  %7s\n", '-'*longest_name, '-'*8, '-'*7)
+
+    res.each { |r|
+      printf("%-#{longest_name}s  %8d  %7d\n", r[0], r[1].round, (r[2]/100).round)
+    }
+
+    printf("%-#{longest_name}s  %8s  %7s\n", '-'*longest_name, '-'*8, '-'*7)
+    printf("%-#{longest_name}s  %8d  %7d\n", "Total", total_dyno.round, (total_addon/100).round)
+    printf("%-#{longest_name}s  %8s  %7s\n", '='*longest_name, '='*8, '='*7)
+
+    #res.sort! { |a,b| a[3] <=> b[3] }
+    #res << [ "-----", "-----", "-----", "-----"]
+    #res << [ "total", "", total_dyno.round.to_s, total_addon.round.to_s]
+
+
+  end
+
   protected
   def api_key
     Heroku::Auth.api_key
