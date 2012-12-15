@@ -371,7 +371,6 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
     res = []
     total_dyno = 0
     total_addon = 0
-    puts "https://:#{api_key}@#{MANAGER_HOST}/v1/organization/#{org}/usage/monthly/#{Time.now.to_i*1000}/1"
     usage = json_decode(RestClient.get("https://:#{api_key}@#{MANAGER_HOST}/v1/organization/#{org}/usage/monthly/#{Time.now.to_i*1000}/1"))
     latest_month = usage.map { |x| x["time"] }.max
 
