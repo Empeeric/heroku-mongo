@@ -18,7 +18,6 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
     display "heroku manager:transfer (--to|--from) ORG_NAME [--app APP_NAME]"
     display "heroku manager:add_user --org ORG_NAME --user USER_EMAIL --role ROLE"
     display "heroku manager:add_contributor_to_app --org ORG_NAME --user USER_EMAIL [--app APP_NAME]"
-    display "Heroku Teams Migration Commands:"
     display "heroku manager:usage --org ORG_NAME [--sort FIELD] [--month MONTH]"
     display "heroku manager:events --org ORG_NAME"
   end
