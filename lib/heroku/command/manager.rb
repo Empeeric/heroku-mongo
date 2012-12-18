@@ -20,6 +20,8 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
     display "heroku manager:add_contributor_to_app --org ORG_NAME --user USER_EMAIL [--app APP_NAME]"
     display "Heroku Teams Migration Commands:"
     display "heroku manager:team_to_org --team TEAM_NAME --org ORG_NAME"
+    display "heroku manager:usage --org ORG_NAME [--sort FIELD] [--month MONTH]"
+    display "heroku manager:events --org ORG_NAME"
   end
 
   # manager:transfer (--to|--from) ORG_NAME [--app APP_NAME]
@@ -424,7 +426,7 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
           resp = json_decode(RestClient.get("https://:#{api_key}@#{MANAGER_HOST}#{path}"))
 
           resp["events"].each { |r|
-            print_and_flush "#{Time.at(r["time_in_millis_since_epoch"]/1000)} #{r["actor"]} #{r["action"]} #{r["app"]} #{json_encode(r["attributes"])}\n"
+            print_and_flush "#{Time.at(r["timestamp"]/1000)} #{r["actor"]} #{r["action"]} #{r["app"]} #{json_encode(r["attributes"])}\n"
           }
 
           go = resp.has_key?("older") 
@@ -445,12 +447,16 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
   #
   #   shows current or previous month's usage for an org
   #
-  # -o, --org ORG        # Org to list events for
+  # -o, --org ORG        # Org to list usage for
   # -s, --sort FIELD     # sort by FIELD, one of 'dyno' or 'addon'
   # -m, --month MONTH    # show usage for MONTH (yyyy-dd). Current is default.
   #
   def usage
     org = options[:org]
+
+    if org == nil
+      raise Heroku::Command::CommandFailed, "No organization specified. Use the -o --org option to specify an organization."
+    end
 
     apps = {}
     json_decode(RestClient.get("https://:#{api_key}@#{MANAGER_HOST}/v1/organization/#{org}/app")).each { |a|
