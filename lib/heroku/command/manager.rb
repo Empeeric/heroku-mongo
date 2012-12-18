@@ -19,7 +19,6 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
     display "heroku manager:add_user --org ORG_NAME --user USER_EMAIL --role ROLE"
     display "heroku manager:add_contributor_to_app --org ORG_NAME --user USER_EMAIL [--app APP_NAME]"
     display "Heroku Teams Migration Commands:"
-    display "heroku manager:team_to_org --team TEAM_NAME --org ORG_NAME"
     display "heroku manager:usage --org ORG_NAME [--sort FIELD] [--month MONTH]"
     display "heroku manager:events --org ORG_NAME"
   end
@@ -80,72 +79,6 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
     end
   end
 
-  # manager:team_to_org --team TEAM_NAME --org ORG_NAME
-  #
-  # transfer all apps from a team to an organization account
-  #
-  # -t, --team TEAM         # Transfer applications from this team
-  # -o, --org ORG       # Transfer applications to this org
-  #
-  def team_to_org
-    team = options[:team]
-    org = options[:org]
-
-    if team.nil?
-      raise Heroku::Command::CommandFailed, "No team specified.\nSpecify which team to transfer from with --team <team name>.\n"
-    end
-
-    if org.nil?
-      raise Heroku::Command::CommandFailed, "No organization specified.\nSpecify which organization to transfer to with --org <org name>.\n"
-    end
-
-    print_and_flush("Adding team members to #{org}: \n")
-    team_members = json_decode(heroku.get("/v3/teams/#{team}/members"))
-    team_members.each { |member|
-
-      print_and_flush("Adding member #{member["user_email"]}... ")
-      begin
-        response = RestClient.post("https://:#{api_key}@#{MANAGER_HOST}/v1/organization/#{org}/user", json_encode({ "email" => member["user_email"], "role" => "member" }), :content_type => :json)
-
-        if response.code == 201
-          print_and_flush("done\n")
-        else
-          print_and_flush("failed - An error occurred: #{response.code}\n#{response}\n")
-        end
-      rescue => e
-        if e.response && e.response.code == 302
-          print_and_flush("#{member["user_email"]} already belongs to #{org}\n")
-        elsif e.response
-          errorText = json_decode(e.response.body)
-          print_and_flush("failed - An error occurred: #{errorText["error_message"]}\n")
-        else
-          print_and_flush("failed - An error occurred: #{e.message}\n")
-        end
-      end
-
-
-    }
-
-    print_and_flush("Transferring apps from #{team} to #{org}... ")
-
-    begin
-      response = RestClient.post("https://:#{api_key}@#{MANAGER_HOST}/v1/organization/#{org}/migrate-from-team", json_encode({ "team" => team }), :content_type => :json)
-
-      if response.code == 200
-        print_and_flush("done\n")
-      else
-        print_and_flush("failed\nAn error occurred: #{response.code}\n#{response}\n")
-      end
-    rescue => e
-      if e.response
-        puts e.response
-        errorText = json_decode(e.response.body)
-        print_and_flush("failed\nAn error occurred: #{errorText["error_message"]}\n")
-      else
-        print_and_flush("failed\nAn error occurred: #{e.message}\n")
-      end
-    end
-  end
 
   # manager:add_user --org ORG_NAME --user USER_EMAIL --role ROLE
   #
