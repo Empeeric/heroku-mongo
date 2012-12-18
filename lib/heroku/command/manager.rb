@@ -1,5 +1,6 @@
 require 'heroku/command/base'
 require 'rest_client'
+require 'date'
 
 # manage apps in organization accounts
 #
@@ -266,6 +267,94 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
     end
   end
 
+  # manager:collaborators --org ORG_NAME
+  #
+  # list all users who have access to apps in an org
+  #
+  # -o, --org ORG_NAME     # Organization name (required)
+  # -r, --role ROLE        # Only list collaborators in a particular role
+  # -u, --user EMAIL       # Show role and apps for a single user
+  # -s, --sort role|email  # Sort by email (username) or role. Default is role.
+  #
+  def collaborators
+    org = options[:org]
+#    begin
+      resp = json_decode(RestClient.get("https://:#{api_key}@#{MANAGER_HOST}/v1/organization/#{org}/collaborators"))
+      if resp.size == 0
+        print_and_flush("No users in organization #{org}\n")
+        return
+      end
+      max_user_width = resp.map { |x| x["email"] }.max { |a,b| a.length <=> b.length }.length
+      max_role_width = 12 # 'collaborator'
+      app_list_width = resp.map { |x| x["apps"] }.flatten.max { |a,b| a.length <=> b.length }.length
+
+      fmt = "%-#{max_user_width}s  %-12s  %-#{app_list_width}s\n"
+
+      puts
+      printf(fmt, "User", "Role", "App list")
+      printf(fmt, '-'*max_user_width, '-'*max_role_width, '-'*app_list_width)
+      if options[:role]
+        filtered = resp.select { |x| x["role"] == options[:role] }
+      elsif options[:user]
+        filtered = resp.select { |x| x["email"] == options[:user] }
+      else
+        filtered = resp
+      end
+
+      sort_field = options[:sort] || 'role'
+
+      filtered.sort { |a,b| a[sort_field] <=> b[sort_field] }.each { |x|
+
+        # Experimented with a wrapped comma separated list of app names (could be multiple on one lint)
+        # But looks like we might as well just have one app name per line if we want to stay within 80
+
+        #app_list = x["apps"].join(", ").scan(/\S.{0,#{app_list_width}}\S(?=\s|$)|\S+/)
+
+        if x["role"] == 'admin'
+          printf(fmt, x["email"], x["role"], "[all apps]")
+        else
+          printf(fmt, x["email"], x["role"], x["apps"][0] || "")
+          if x["apps"].size > 1
+            for i in 1..x["apps"].length-1
+              printf(fmt, ' '*max_user_width, ' '*max_role_width, x["apps"][i])
+            end
+          end
+        end
+      }
+
+      # puts "Administrators:"
+      # puts user_list.select{ |u| u["role"] == "admin"}.collect { |u|
+      #     "    #{u["email"]}"
+      # }
+      # puts "\nMembers:"
+      # puts user_list.select{ |u| u["role"] == "member"}.collect { |u|
+      #   "    #{u["email"]}"
+      # }
+    # rescue => e
+    #   if e.response
+    #     errorText = json_decode(e.response.body)
+    #     print_and_flush("An error occurred: #{errorText["error_message"]}\n")
+    #   else
+    #     print_and_flush("An error occurred: #{e.message}\n")
+    #   end
+    # end
+  end
+
+  def wrapped_list(words, len, indent)
+    lines = []
+    line = ''
+    words.each { |w|
+      if line.length+2+w.length+1 > len
+        line += ','
+        lines << line
+        line = ' '*indent+w
+      else
+        line += ', '+w
+      end
+    }
+    return lines
+  end
+
   # manager:apps --org ORG_NAME
   #
   # list apps in the specified org
@@ -354,30 +443,48 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
 
   # usage --org ORG
   #
-  #   shows last month's usage for an org
+  #   shows current or previous month's usage for an org
   #
   # -o, --org ORG        # Org to list events for
   # -s, --sort FIELD     # sort by FIELD, one of 'dyno' or 'addon'
+  # -m, --month MONTH    # show usage for MONTH (yyyy-dd). Current is default.
   #
   def usage
     org = options[:org]
 
     apps = {}
     json_decode(RestClient.get("https://:#{api_key}@#{MANAGER_HOST}/v1/organization/#{org}/app")).each { |a|
-      apps[a["id"]] = a
+      apps[a["id"]] = a["name"]
     }
-    longest_name = apps.values.map { |x| x["name"] }.max { |a,b| a.length <=> b.length }.length
+    longest_name = apps.size > 0 ? apps.values.max { |a,b| a.length <=> b.length }.length : 11
 
     res = []
     total_dyno = 0
     total_addon = 0
-    usage = json_decode(RestClient.get("https://:#{api_key}@#{MANAGER_HOST}/v1/organization/#{org}/usage/monthly/#{Time.now.to_i*1000}/1"))
-    latest_month = usage.map { |x| x["time"] }.max
 
-    usage.select { |x| x["time"] == latest_month }.group_by { |x| x["resource_id"] }.each { |k,v|
+    if options[:month]
+      ts = DateTime.parse(options[:month]+'-01')
+      te = (ts >> 1)
+      t_start = Time.utc(ts.year, ts.month, ts.day, ts.hour, ts.min, ts.sec)
+      t_end = Time.utc(te.year, te.month, te.day, te.hour, te.min, te.sec) - 1
+      grain = 'monthly'
+    else
+      t_end = Time.now.utc
+      t_start = Time.utc(t_end.year,t_end.month,1)
+      grain = 'daily'
+    end
+
+    puts "Usage for period #{t_start} to #{t_end}"
+    usage = json_decode(RestClient.get("https://:#{api_key}@#{MANAGER_HOST}/v1/organization/#{org}/usage/#{grain}/#{t_end.to_i*1000}/1"))
+    if usage.size == 0
+      puts "No usage records found for this period in organization #{org}"
+      return
+    end
+
+    usage.select { |x| x["time"] >= t_start.to_i*1000 }.group_by { |x| x["resource_id"] }.each { |k,v|
       d = v.select { |x| x["product_group"] == 'dyno' }.map { |x| x["quantity"] }.inject(:+) || 0
       a = v.select { |x| x["product_group"] == 'addon' }.map { |x| x["quantity"]*x["rate"] }.inject(:+) || 0
-      res << [ (apps[k] || {"name" => "deleted"})["name"], d, a]
+      res << [ apps[k] || 'app'+k, d, a]
       total_dyno += d
       total_addon += a
 
@@ -389,8 +496,7 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
       res.sort! { |a,b| a[2] <=> b[2] }
     end
 
-    printf("%-#{longest_name}s       %4d-%02d\n", "", Time.at(latest_month/1000).year, Time.at(latest_month/1000).utc.month)
-    printf("%-#{longest_name}s  %8s--%7s\n", "", '-'*8, '-'*7)
+    puts
     printf("%-#{longest_name}s  %8s  %7s\n", "App name", "Dyno hrs", "Addon $")
     printf("%-#{longest_name}s  %8s  %7s\n", '-'*longest_name, '-'*8, '-'*7)
 
@@ -401,11 +507,6 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
     printf("%-#{longest_name}s  %8s  %7s\n", '-'*longest_name, '-'*8, '-'*7)
     printf("%-#{longest_name}s  %8d  %7d\n", "Total", total_dyno.round, (total_addon/100).round)
     printf("%-#{longest_name}s  %8s  %7s\n", '='*longest_name, '='*8, '='*7)
-
-    #res.sort! { |a,b| a[3] <=> b[3] }
-    #res << [ "-----", "-----", "-----", "-----"]
-    #res << [ "total", "", total_dyno.round.to_s, total_addon.round.to_s]
-
 
   end
 
