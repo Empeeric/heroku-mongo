@@ -367,7 +367,7 @@ class Heroku::Command::Manager < Heroku::Command::BaseWithApp
     org = options[:org]
     puts "The following apps are part of #{org}:"
     begin
-      puts json_decode(RestClient.get("https://:#{api_key}@#{MANAGER_HOST}/v1/organization/#{org}/app"),{:accept => :json}).collect { |a|
+      puts json_decode(RestClient.get("https://:#{api_key}@#{MANAGER_HOST}/v1/organization/#{org}/app",{:accept => :json})).collect { |a|
         "    #{a["name"]}"
       }
     rescue => e
