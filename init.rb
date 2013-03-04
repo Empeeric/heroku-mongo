@@ -1,1 +1,1 @@
-require "heroku/command/manager"
+require "heroku/command/mongo"
