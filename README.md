@@ -7,3 +7,7 @@ Heroku CLI plugin for interacting with heroku-mongo
 Open console:
 
     $ heroku mongo
+
+Dump db:
+
+    $ heroku mongo:dump
