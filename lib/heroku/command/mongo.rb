@@ -12,32 +12,29 @@ end
 # manage some MongoDBaaS
 #
 class Heroku::Command::Mongo < Heroku::Command::Base
-
     # mongo
     #
     # manage some MongoDBaaS
     #
     # -d, --dbname  # name of the local DB
-    #
+    # -u, --dburl DBURL    # load it to local DBNAME
     def index
-      validate_arguments!
-
-      cmd = "mongo -u %{user} -p %{password} %{host}:%{port}%{path}" % hash
-      exec(cmd)
-    end
-
-
-    def console
         validate_arguments!
-
-        key = "MONGOLAB_URI"
-        vars = api.get_config_vars(app).body
-        uri = URI(vars[key])
-        hash = {}
-        uri.instance_variables.each {|var| hash[var.to_s.delete("@").to_sym] = uri.instance_variable_get(var) }
+        hash = get_parsed_db_params
         cmd = "mongo -u %{user} -p %{password} %{host}:%{port}%{path}" % hash
         exec(cmd)
     end
+
+    
+
+    # -u, --dburl DBURL    # load it to local DBNAME
+    def console
+        validate_arguments!
+        hash = get_parsed_db_params
+        cmd = "mongo -u %{user} -p %{password} %{host}:%{port}%{path}" % hash
+        exec(cmd)
+    end
+
 
 
     # mongo:dump
@@ -45,68 +42,68 @@ class Heroku::Command::Mongo < Heroku::Command::Base
     # dump the remote db and load it to local DBNAME
     #
     # -d, --dbname DBNAME  # load it to local DBNAME
+    # -u, --dburl DBURL    # load it to local DBNAME
     def dump
-        dbname = shift_argument
         validate_arguments!
-
-        key = "MONGOLAB_URI"
-        vars = api.get_config_vars(app).body
-        uri = URI(vars[key])
-        hash = {}
-        uri.instance_variables.each {|var| hash[var.to_s.delete("@").to_sym] = uri.instance_variable_get(var) }
-        hash[:db] = hash[:path][1..-1]
-        cmd = "mongodump -u %{user} -p %{password} -d %{db} -h %{host}:%{port}" % hash
+        hash = get_parsed_db_params
+        cmd = "mongodump -u %{user} -p %{password} -d %{db} -h %{host}:%{port} -o %{dumppath}" % hash
         exec(cmd)
-        if dbname
-            cmd1 = "mongorestore --drop -d %{dbname} dump/%{db}" % hash
-            exec(cmd1)
+        if options[:dbname]
+            load
         end
     end
 
+    
+
+    # mongo:load
+    #
+    # load it to local DBNAME
+    #
+    # -d, --dbname DBNAME  # load it to local DBNAME
+    # -u, --dburl DBURL    # load it to local DBNAME
+    def load
+        validate_arguments!
+        hash = get_parsed_db_params
+        cmd1 = "mongorestore --drop -d %{dbname} %{dumppath}" % hash
+        exec(cmd1)
+    end
+
+    
     
     # mongo:load
     #
     # load it to local DBNAME
     #
     # -d, --dbname DBNAME  # load it to local DBNAME
-    def load
-        validate_arguments!
-
-        key = "MONGOLAB_URI"
-        vars = api.get_config_vars(app).body
-        uri = URI(vars[key])
-        hash = {}
-        uri.instance_variables.each {|var| hash[var.to_s.delete("@").to_sym] = uri.instance_variable_get(var) }
-        hash[:db] = hash[:path][1..-1]
-        hash[:dbname] = options[:dbname]
-        cmd1 = "mongorestore --drop -d %{dbname} dump/%{db}" % hash
-        exec(cmd1)
-    end
-
-    
-    
+    # -u, --dburl DBURL    # load it to local DBNAME
     def restore
-        @app = shift_argument || options[:app] || options[:confirm]
         validate_arguments!
-        unless @app
-          error("Usage: heroku mongo:restore --app APP\nMust specify APP to restore to.")
-        end
 
-        api.get_app(@app) # fail fast if no access or doesn't exist
+        api.get_app(app) # fail fast if no access or doesn't exist
 
         message = "WARNING: Potentially Destructive Action\nThis command will destroy data for #{@app} ."
-        if confirm_command(@app, message)
-            action("Restoring #{@app}") do
-                key = "MONGOLAB_URI"
-                vars = api.get_config_vars(app).body
-                uri = URI(vars[key])
-                hash = {}
-                uri.instance_variables.each {|var| hash[var.to_s.delete("@").to_sym] = uri.instance_variable_get(var) }
-                hash[:db] = hash[:path][1..-1]
-                cmd = "mongorestore --drop -u %{user} -p %{password} -d %{db} -h %{host}:%{port} dump/%{db}" % hash
+        if confirm_command(app, message)
+            action("Restoring #{app}") do
+                hash = get_parsed_db_params
+                cmd = "mongorestore --drop -u %{user} -p %{password} -d %{db} -h %{host}:%{port} %{dumppath}" % hash
                 exec(cmd)
             end
         end
+    end
+
+    
+
+    def get_parsed_db_params
+        vars = api.get_config_vars(app).body
+        raw_uri = options[:dburl] || vars["MONGOLAB_URI"] || vars["MONGOHQ_URL"]
+        display(raw_uri)
+        uri = URI(raw_uri)
+        hash = {}
+        uri.instance_variables.each {|var| hash[var.to_s.delete("@").to_sym] = uri.instance_variable_get(var) }
+        hash[:db] = hash[:path][1..-1]
+        hash[:dbname] = options[:dbname] || hash[:db]
+        hash[:dumppath] = "dump/%{dbname}" % hash
+        hash
     end
 
 end
