@@ -19,10 +19,7 @@ class Heroku::Command::Mongo < Heroku::Command::Base
     # -d, --dbname  # name of the local DB
     # -u, --dburl DBURL    # load it to local DBNAME
     def index
-        validate_arguments!
-        hash = get_parsed_db_params
-        cmd = "mongo -u %{user} -p %{password} %{host}:%{port}%{path}" % hash
-        exec(cmd)
+        console
     end
 
     
@@ -46,7 +43,7 @@ class Heroku::Command::Mongo < Heroku::Command::Base
     def dump
         validate_arguments!
         hash = get_parsed_db_params
-        cmd = "mongodump -u %{user} -p %{password} -d %{db} -h %{host}:%{port} -o %{dumppath}" % hash
+        cmd = "mongodump -u %{user} -p %{password} -d %{db} -h %{host}:%{port} dump" % hash
         exec(cmd)
         if options[:dbname]
             load
@@ -61,6 +58,7 @@ class Heroku::Command::Mongo < Heroku::Command::Base
     #
     # -d, --dbname DBNAME  # load it to local DBNAME
     # -u, --dburl DBURL    # load it to local DBNAME
+    # -r, --remote         # load it to local DBNAME
     def load
         validate_arguments!
         hash = get_parsed_db_params
@@ -102,7 +100,7 @@ class Heroku::Command::Mongo < Heroku::Command::Base
         uri.instance_variables.each {|var| hash[var.to_s.delete("@").to_sym] = uri.instance_variable_get(var) }
         hash[:db] = hash[:path][1..-1]
         hash[:dbname] = options[:dbname] || hash[:db]
-        hash[:dumppath] = "dump/%{dbname}" % hash
+        hash[:dumppath] = "dump/%{db}/" % hash
         hash
     end
 
