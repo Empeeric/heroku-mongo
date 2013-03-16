@@ -43,7 +43,7 @@ class Heroku::Command::Mongo < Heroku::Command::Base
     def dump
         validate_arguments!
         hash = get_parsed_db_params
-        cmd = "mongodump -u %{user} -p %{password} -d %{db} -h %{host}:%{port} dump" % hash
+        cmd = "mongodump -u %{user} -p %{password} -d %{db} -h %{host}:%{port}" % hash
         exec(cmd)
         if options[:dbname]
             load
@@ -58,7 +58,6 @@ class Heroku::Command::Mongo < Heroku::Command::Base
     #
     # -d, --dbname DBNAME  # load it to local DBNAME
     # -u, --dburl DBURL    # load it to local DBNAME
-    # -r, --remote         # load it to local DBNAME
     def load
         validate_arguments!
         hash = get_parsed_db_params
@@ -83,8 +82,11 @@ class Heroku::Command::Mongo < Heroku::Command::Base
         if confirm_command(app, message)
             action("Restoring #{app}") do
                 hash = get_parsed_db_params
-                cmd = "mongorestore --drop -u %{user} -p %{password} -d %{db} -h %{host}:%{port} %{dumppath}" % hash
-                exec(cmd)
+                print "\nBacking up current production data to %{bkpath}\n" % hash
+                spawn "mongodump -u %{user} -p %{password} -d %{db} -h %{host}:%{port} -o %{bkpath}" % hash
+                Process.waitall
+                print "\nRestoring\n" % hash
+                exec "mongorestore --drop -u %{user} -p %{password} -d %{db} -h %{host}:%{port} %{dumppath}" % hash
             end
         end
     end
@@ -99,8 +101,10 @@ class Heroku::Command::Mongo < Heroku::Command::Base
         hash = {}
         uri.instance_variables.each {|var| hash[var.to_s.delete("@").to_sym] = uri.instance_variable_get(var) }
         hash[:db] = hash[:path][1..-1]
-        hash[:dbname] = options[:dbname] || hash[:db]
-        hash[:dumppath] = "dump/%{db}/" % hash
+        hash[:dbname] = options[:dbname] || app
+        hash[:dumppath] = "dump/%{db}" % hash
+        hash[:timestamp] = String(Time::now)[0...19].tr(' :', '-')
+        hash[:bkpath] = "dump/#{@app}-%{timestamp}" % hash
         hash
     end
 
