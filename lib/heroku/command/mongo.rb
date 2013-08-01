@@ -62,6 +62,7 @@ class Heroku::Command::Mongo < Heroku::Command::Base
         validate_arguments!
         hash = get_parsed_db_params
         cmd1 = "mongorestore --drop -d %{dbname} %{dumppath}" % hash
+        print cmd1
         exec(cmd1)
     end
 
@@ -71,22 +72,24 @@ class Heroku::Command::Mongo < Heroku::Command::Base
     #
     # load it to local DBNAME
     #
-    # -d, --dbname DBNAME  # load it to local DBNAME
-    # -u, --dburl DBURL    # load it to local DBNAME
+    # -p, --respath PATH       # path to dump to restore
+    # -u, --dburl DBURL     # load it to local DBNAME
     def restore
         validate_arguments!
 
         api.get_app(app) # fail fast if no access or doesn't exist
 
+        hash = get_parsed_db_params
         message = "WARNING: Potentially Destructive Action\nThis command will destroy data for #{@app} ."
+        cmd1 = "mongorestore --drop -u %{user} -p %{password} -d %{db} -h %{host}:%{port} %{restorepath}" % hash
+        print cmd1
         if confirm_command(app, message)
             action("Restoring #{app}") do
-                hash = get_parsed_db_params
                 print "\nBacking up current production data to %{bkpath}\n" % hash
                 spawn "mongodump -u %{user} -p %{password} -d %{db} -h %{host}:%{port} -o %{bkpath}" % hash
                 Process.waitall
                 print "\nRestoring\n" % hash
-                exec "mongorestore --drop -u %{user} -p %{password} -d %{db} -h %{host}:%{port} %{dumppath}" % hash
+                exec cmd1
             end
         end
     end
@@ -103,6 +106,7 @@ class Heroku::Command::Mongo < Heroku::Command::Base
         hash[:db] = hash[:path][1..-1]
         hash[:dbname] = options[:dbname] || app
         hash[:dumppath] = "dump/%{db}" % hash
+        hash[:restorepath] = options[:respath] || ("dump/%{db}" % hash)
         hash[:timestamp] = String(Time::now)[0...19].tr(' :', '-')
         hash[:bkpath] = "dump/#{@app}-%{timestamp}" % hash
         hash
