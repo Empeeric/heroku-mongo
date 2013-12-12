@@ -111,5 +111,9 @@ class Heroku::Command::Mongo < Heroku::Command::Base
         hash[:bkpath] = "dump/#{@app}-%{timestamp}" % hash
         hash
     end
+    
+
+    alias_command "download", "mongo:dump"
+    alias_command "upload", "mongo:restore"
 
 end
