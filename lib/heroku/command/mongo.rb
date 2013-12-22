@@ -16,15 +16,18 @@ class Heroku::Command::Mongo < Heroku::Command::Base
     #
     # manage some MongoDBaaS
     #
-    # -d, --dbname  # name of the local DB
-    # -u, --dburl DBURL    # load it to local DBNAME
+    # -u, --dburl DBURL    # connect to DBURL
     def index
         console
     end
 
     
 
-    # -u, --dburl DBURL    # load it to local DBNAME
+    # mongo:console
+    #
+    # Open a console connected to the remote db from `config`
+    #
+    # -u, --dburl DBURL    # connect to DBURL
     def console
         validate_arguments!
         hash = get_parsed_db_params
@@ -39,16 +42,18 @@ class Heroku::Command::Mongo < Heroku::Command::Base
     #
     # dump the remote db and load it to local DBNAME
     #
+    # -l, --load                # load it to local
     # -d, --dbname DBNAME       # load it to local DBNAME
-    # -u, --dburl DBURL         # load it to DBURL
-    # -o, --outpath DUMPPATH    # store files in DUMPPATH
+    # -o, --dumppath DUMPPATH   # store files in DUMPPATH
     def dump
         validate_arguments!
         hash = get_parsed_db_params
         cmd = "mongodump -u %{user} -p %{password} -d %{db} -h %{host}:%{port} -o %{dumppath}\n"  % hash
         print cmd
-        exec(cmd)
-        if options[:dbname]
+        spawn cmd
+        Process.waitall
+        if hash[:load]
+            print "\n######## Loading into %{dbname} ########\n" % hash
             load
         end
     end
@@ -61,12 +66,11 @@ class Heroku::Command::Mongo < Heroku::Command::Base
     # load it to local DBNAME
     #
     # -d, --dbname DBNAME       # load it to local DBNAME
-    # -u, --dburl DBURL         # load it to DBURL
-    # -o, --outpath DUMPPATH    # stored files are in DUMPPATH
+    # -o, --outpath OUTPATH     # stored files are in OUTPATH
     def load
         validate_arguments!
         hash = get_parsed_db_params
-        cmd = "mongorestore --drop -d %{dbname} %{dumppath}\n" % hash
+        cmd = "mongorestore --drop -d %{dbname} %{outpath}\n" % hash
         print cmd
         exec(cmd)
     end
@@ -78,9 +82,8 @@ class Heroku::Command::Mongo < Heroku::Command::Base
     #
     # load it to local DBNAME
     #
-    # -p, --respath PATH       # path to dump to restore
-    # -u, --dburl DBURL        # load it to local DBNAME
-    # -o, --outpath BKPATH     # store files in BKPATH
+    # -p, --respath PATH     # path to dump to restore
+    # -o, --bkpath  BKPATH   # store files in BKPATH
     def restore
         validate_arguments!
 
@@ -88,11 +91,10 @@ class Heroku::Command::Mongo < Heroku::Command::Base
 
         hash = get_parsed_db_params
         message1 = "WARNING: Potentially Destructive Action\nThis command will destroy data for #{@app}.\n"
-        message2 = "\nBacking up current production data to %{bkpath}\n" % hash
         cmd1 = "mongodump -u %{user} -p %{password} -d %{db} -h %{host}:%{port} -o %{bkpath}\n" % hash
+        message2 = "\nBacking up current production data to %{bkpath}\n" % hash
         cmd2 = "mongorestore --drop -u %{user} -p %{password} -d %{db} -h %{host}:%{port} %{restorepath}\n" % hash
-        print message1
-        if confirm_command(app, message)
+        if confirm_command(app, message1)
             action("Restoring #{app}") do
                 print message2
                 print cmd1
@@ -116,11 +118,13 @@ class Heroku::Command::Mongo < Heroku::Command::Base
         hash = {}
         uri.instance_variables.each {|var| hash[var.to_s.delete("@").to_sym] = uri.instance_variable_get(var) }
         hash[:db] = hash[:path][1..-1]
+        hash[:load] = options[:load] || options[:dbname]
         hash[:dbname] = options[:dbname] || app
-        hash[:dumppath] = options[:dumppath] || "dump/%{db}" % hash
-        hash[:restorepath] = options[:respath] || options[:dumppath]
+        hash[:dumppath] = options[:dumppath] || "dump" % hash
+        hash[:outpath] = options[:outpath] || "%{dumppath}/%{db}" % hash
+        hash[:restorepath] = options[:respath] || hash[:outpath]
         hash[:timestamp] = String(Time::now)[0...19].tr(' :', '-')
-        hash[:bkpath] = options[:bkpath] || "${dumppath}/#{@app}-%{timestamp}" % hash
+        hash[:bkpath] = options[:bkpath] || "%{dumppath}/#{@app}-%{timestamp}" % hash
         hash
     end
 
