@@ -28,7 +28,8 @@ class Heroku::Command::Mongo < Heroku::Command::Base
     def console
         validate_arguments!
         hash = get_parsed_db_params
-        cmd = "mongo -u %{user} -p %{password} %{host}:%{port}%{path}" % hash
+        cmd = "mongo -u %{user} -p %{password} %{host}:%{port}%{path}\n" % hash
+        print cmd
         exec(cmd)
     end
 
@@ -38,17 +39,20 @@ class Heroku::Command::Mongo < Heroku::Command::Base
     #
     # dump the remote db and load it to local DBNAME
     #
-    # -d, --dbname DBNAME  # load it to local DBNAME
-    # -u, --dburl DBURL    # load it to local DBNAME
+    # -d, --dbname DBNAME       # load it to local DBNAME
+    # -u, --dburl DBURL         # load it to DBURL
+    # -o, --outpath DUMPPATH    # store files in DUMPPATH
     def dump
         validate_arguments!
         hash = get_parsed_db_params
-        cmd = "mongodump -u %{user} -p %{password} -d %{db} -h %{host}:%{port}" % hash
+        cmd = "mongodump -u %{user} -p %{password} -d %{db} -h %{host}:%{port} -o %{dumppath}\n"  % hash
+        print cmd
         exec(cmd)
         if options[:dbname]
             load
         end
     end
+    alias_command "dump", "mongo:dump"
 
     
 
@@ -56,15 +60,17 @@ class Heroku::Command::Mongo < Heroku::Command::Base
     #
     # load it to local DBNAME
     #
-    # -d, --dbname DBNAME  # load it to local DBNAME
-    # -u, --dburl DBURL    # load it to local DBNAME
+    # -d, --dbname DBNAME       # load it to local DBNAME
+    # -u, --dburl DBURL         # load it to DBURL
+    # -o, --outpath DUMPPATH    # stored files are in DUMPPATH
     def load
         validate_arguments!
         hash = get_parsed_db_params
-        cmd1 = "mongorestore --drop -d %{dbname} %{dumppath}" % hash
-        print cmd1
-        exec(cmd1)
+        cmd = "mongorestore --drop -d %{dbname} %{dumppath}\n" % hash
+        print cmd
+        exec(cmd)
     end
+    alias_command "load", "mongo:load"
 
     
     
@@ -73,26 +79,32 @@ class Heroku::Command::Mongo < Heroku::Command::Base
     # load it to local DBNAME
     #
     # -p, --respath PATH       # path to dump to restore
-    # -u, --dburl DBURL     # load it to local DBNAME
+    # -u, --dburl DBURL        # load it to local DBNAME
+    # -o, --outpath BKPATH     # store files in BKPATH
     def restore
         validate_arguments!
 
         api.get_app(app) # fail fast if no access or doesn't exist
 
         hash = get_parsed_db_params
-        message = "WARNING: Potentially Destructive Action\nThis command will destroy data for #{@app} ."
-        cmd1 = "mongorestore --drop -u %{user} -p %{password} -d %{db} -h %{host}:%{port} %{restorepath}" % hash
-        print cmd1
+        message1 = "WARNING: Potentially Destructive Action\nThis command will destroy data for #{@app}.\n"
+        message2 = "\nBacking up current production data to %{bkpath}\n" % hash
+        cmd1 = "mongodump -u %{user} -p %{password} -d %{db} -h %{host}:%{port} -o %{bkpath}\n" % hash
+        cmd2 = "mongorestore --drop -u %{user} -p %{password} -d %{db} -h %{host}:%{port} %{restorepath}\n" % hash
+        print message1
         if confirm_command(app, message)
             action("Restoring #{app}") do
-                print "\nBacking up current production data to %{bkpath}\n" % hash
-                spawn "mongodump -u %{user} -p %{password} -d %{db} -h %{host}:%{port} -o %{bkpath}" % hash
+                print message2
+                print cmd1
+                spawn cmd1
                 Process.waitall
                 print "\nRestoring\n" % hash
-                exec cmd1
+                print cmd2
+                exec cmd2
             end
         end
     end
+    alias_command "restore", "mongo:restore"
 
     
 
@@ -105,15 +117,12 @@ class Heroku::Command::Mongo < Heroku::Command::Base
         uri.instance_variables.each {|var| hash[var.to_s.delete("@").to_sym] = uri.instance_variable_get(var) }
         hash[:db] = hash[:path][1..-1]
         hash[:dbname] = options[:dbname] || app
-        hash[:dumppath] = "dump/%{db}" % hash
-        hash[:restorepath] = options[:respath] || ("dump/%{db}" % hash)
+        hash[:dumppath] = options[:dumppath] || "dump/%{db}" % hash
+        hash[:restorepath] = options[:respath] || options[:dumppath]
         hash[:timestamp] = String(Time::now)[0...19].tr(' :', '-')
-        hash[:bkpath] = "dump/#{@app}-%{timestamp}" % hash
+        hash[:bkpath] = options[:bkpath] || "${dumppath}/#{@app}-%{timestamp}" % hash
         hash
     end
+
     
-
-    alias_command "download", "mongo:dump"
-    alias_command "upload", "mongo:restore"
-
 end
