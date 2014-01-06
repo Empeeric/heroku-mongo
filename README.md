@@ -23,3 +23,7 @@ Load a dumbed directory (with remote name) to a local DB with app name:
 Save a local DB to a dump directory with app name:
 
     $ heroku mongo:save
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/Empeeric/heroku-mongo/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
